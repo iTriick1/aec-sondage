@@ -4,44 +4,57 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#070a14">
-  <title>Quiz IA — vote en direct</title>
-  <meta name="description" content="Page de vote du quiz en direct de la présentation étudiante de l'AEC en IA.">
+  <title>Quiz IA — jeu en direct</title>
+  <meta name="description" content="Page de jeu du quiz en direct de la présentation étudiante de l'AEC en IA.">
   <style>
-    :root { --bg:#070a14; --card:#141b31; --line:#26304d; --text:#e9edf6; --muted:#9aa6c3; --accent:#6ef0c4; --blue:#8ea8ff; --orange:#ffb86b; --red:#ff6b81; }
+    :root { --bg:#070a14; --card:#141b31; --line:#26304d; --text:#e9edf6; --muted:#9aa6c3; --accent:#6ef0c4; --blue:#8ea8ff; --orange:#ffb86b; --red:#ff6b81; --gold:#ffd166; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font: 19px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; }
-    button { font: inherit; }
+    button, input { font: inherit; }
     body { padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); background: radial-gradient(circle at 80% -10%, rgba(110,240,196,.18), transparent 50%), radial-gradient(circle at 0% 110%, rgba(142,168,255,.18), transparent 50%), var(--bg); min-height: 100vh; }
     main { max-width: 520px; margin: 0 auto; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-    .brand { font-weight: 700; letter-spacing: .02em; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; }
+    .brand { font-weight: 700; }
     .brand b { color: var(--accent); }
+    .who { font-size: .85rem; color: var(--text); background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 99px; padding: 3px 12px; max-width: 45vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .status { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
     .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
     .status.ok i { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
-    .card { background: rgba(20,27,49,.8); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
-    .num { color: var(--accent); font-size: .9rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; }
-    h1 { font-size: clamp(1.5rem, 6.4vw, 2rem); line-height: 1.3; margin: 10px 0 22px; }
+    .card { background: rgba(20,27,49,.85); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+    .num { color: var(--accent); font-size: .9rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; display: flex; justify-content: space-between; }
+    h1 { font-size: clamp(1.5rem, 6.4vw, 2rem); line-height: 1.3; margin: 10px 0 20px; }
+    .timer { height: 10px; border-radius: 6px; background: var(--line); overflow: hidden; margin: 10px 0 0; }
+    .timer span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--blue)); transition: width .25s linear; }
+    .timer.low span { background: linear-gradient(90deg, var(--orange), var(--red)); }
     .opts { display: grid; gap: 14px; }
-    .opt { width: 100%; text-align: left; font-weight: 700; font-size: clamp(1.2rem, 5.2vw, 1.45rem); line-height: 1.25; color: var(--text); background: #0d1326; border: 2px solid var(--line); border-radius: 16px; padding: 20px 18px; min-height: 76px; display: flex; gap: 16px; align-items: center; cursor: pointer; transition: border-color .2s, background .2s, transform .1s; }
+    .opt { width: 100%; text-align: left; font-weight: 700; font-size: clamp(1.2rem, 5.2vw, 1.45rem); line-height: 1.25; color: var(--text); background: #0d1326; border: 2px solid var(--line); border-radius: 16px; padding: 20px 18px; min-height: 76px; display: flex; gap: 16px; align-items: center; cursor: pointer; transition: border-color .2s, background .2s, transform .1s, opacity .3s; }
     .opt:active { transform: scale(.98); }
     .opt .l { width: 42px; height: 42px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--line); font-weight: 800; font-size: 1.15rem; }
-    .opt.sel { border-color: var(--accent); background: rgba(110,240,196,.12); }
+    .opt.sel { border-color: var(--accent); background: rgba(110,240,196,.14); }
     .opt.sel .l { background: var(--accent); color: var(--bg); }
-    .opt.good { border-color: var(--accent); background: rgba(110,240,196,.2); }
+    .opt.good { border-color: var(--accent); background: rgba(110,240,196,.22); }
     .opt.bad { border-color: var(--red); background: rgba(255,107,129,.15); }
+    .opt.off { opacity: .4; }
     .opt:disabled { cursor: default; }
     .msg { margin-top: 18px; padding: 16px; border-radius: 14px; background: #0d1326; color: var(--muted); font-size: 1.05rem; }
-    .wait h1 { font-size: clamp(1.6rem, 7vw, 2.1rem); }
-    .wait p { font-size: 1.1rem; }
-    .score { font-size: 1.05rem !important; }
     .msg b { color: var(--text); }
-    .wait { text-align: center; padding: 40px 10px; }
-    .pulse { width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 50%; background: var(--accent); opacity: .8; animation: p 1.6s ease-in-out infinite; }
+    .center { text-align: center; }
+    .wait { text-align: center; padding: 34px 10px; }
+    .wait h1 { font-size: clamp(1.6rem, 7vw, 2.1rem); }
+    .wait p { font-size: 1.1rem; color: var(--muted); }
+    .pulse { width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 50%; background: var(--accent); animation: p 1.6s ease-in-out infinite; }
     @keyframes p { 0%,100% { transform: scale(.7); opacity: .4; } 50% { transform: scale(1); opacity: .9; box-shadow: 0 0 40px var(--accent); } }
-    .score { text-align: center; margin-top: 14px; color: var(--muted); font-size: .9rem; }
-    .score b { color: var(--accent); }
+    form { display: grid; gap: 14px; margin-top: 8px; }
+    input[type=text] { width: 100%; padding: 18px; border-radius: 14px; border: 2px solid var(--line); background: #0d1326; color: var(--text); font-size: 1.3rem; font-weight: 700; text-align: center; }
+    input[type=text]:focus { outline: none; border-color: var(--accent); }
+    .go { padding: 18px; border: 0; border-radius: 14px; font-weight: 800; font-size: 1.25rem; color: #071019; background: linear-gradient(110deg, #6ef0c4, #8ea8ff); cursor: pointer; }
+    .go:disabled { opacity: .5; }
+    .big { font-size: 3rem; font-weight: 800; line-height: 1.1; margin: 6px 0; }
+    .gain { color: var(--accent); }
+    .rank { display: inline-block; margin-top: 8px; padding: 8px 16px; border-radius: 99px; background: rgba(255,255,255,.06); font-weight: 700; }
+    .medal { font-size: 4.5rem; line-height: 1; }
+    .winner h1 { color: var(--gold); }
     footer { margin-top: 22px; text-align: center; color: var(--muted); font-size: .75rem; }
     @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
   </style>
@@ -50,104 +63,141 @@
   <main>
     <header>
       <span class="brand">Quiz <b>IA</b></span>
+      <span class="who" id="who" hidden></span>
       <span class="status" id="status"><i></i><span>Connexion…</span></span>
     </header>
     <div id="app" aria-live="polite"></div>
-    <div class="score" id="score"></div>
-    <footer>Projet étudiant · vote anonyme · aucune donnée personnelle collectée</footer>
+    <footer>Projet étudiant · seul votre pseudo est affiché à l'écran · aucune autre donnée collectée</footer>
   </main>
 
   <script>
   (function () {
-    const app = document.getElementById("app");
-    const statusEl = document.getElementById("status");
-    const scoreEl = document.getElementById("score");
+    const app = document.getElementById("app"), whoEl = document.getElementById("who"), statusEl = document.getElementById("status");
     const topic = new URLSearchParams(location.search).get("t") || "";
     const BASE = "https://ntfy.sh/" + encodeURIComponent(topic);
-    const LETTERS = ["A", "B", "C", "D", "E", "F"];
+    const LET = ["A", "B", "C", "D", "E", "F"];
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const store = { get: (k) => { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+    const setStatus = (ok, t) => { statusEl.classList.toggle("ok", ok); statusEl.querySelector("span").textContent = t; };
 
     if (!/^[\w-]{8,64}$/.test(topic)) {
       app.innerHTML = '<div class="card wait"><h1>Lien incomplet</h1><p>Scannez à nouveau le code QR affiché à l\'écran.</p></div>';
-      statusEl.querySelector("span").textContent = "Hors ligne";
-      return;
+      setStatus(false, "Hors ligne"); return;
     }
 
-    // Identifiant anonyme de cet appareil (pour qu'un téléphone = un vote)
-    let me = "";
-    try { me = localStorage.getItem("quiz-id") || ""; } catch (e) {}
-    if (!me) { me = Math.random().toString(36).slice(2, 12); try { localStorage.setItem("quiz-id", me); } catch (e) {} }
+    let me = store.get("quiz-id");
+    if (!me) { me = Math.random().toString(36).slice(2, 12); store.set("quiz-id", me); }
+    let name = store.get("quiz-name");
 
-    let session = null, question = null, revealed = null, myVote = {}, sending = false, results = {};
+    // État de la partie, reconstruit à partir des messages
+    let session = null, q = null, qTime = 0, reveal = null, end = null, joined = false, sending = false, tick = null;
+    const answers = {};   // answers["s:qi"] = { k, ms }
+    const isJoined = () => joined || store.get("quiz-joined") === session;
 
-    const setStatus = (ok, text) => { statusEl.classList.toggle("ok", ok); statusEl.querySelector("span").textContent = text; };
+    const send = (msg) => fetch(BASE, { method: "POST", body: JSON.stringify(msg) }).then((r) => { if (!r.ok) throw new Error(r.status); });
+
+    const remaining = () => q ? Math.max(0, (q.limit || 20) - (Date.now() - qTime) / 1000) : 0;
 
     const render = () => {
-      const goods = Object.values(results).filter(Boolean).length, total = Object.keys(results).length;
-      scoreEl.innerHTML = total ? `Votre score : <b>${goods} / ${total}</b>` : "";
-      if (!question) {
-        app.innerHTML = '<div class="card wait"><div class="pulse"></div><h1>Vous êtes connecté·e !</h1><p>Regardez l\'écran : la prochaine question va apparaître ici.</p></div>';
+      clearInterval(tick);
+      whoEl.hidden = !(isJoined() && name); whoEl.textContent = name;
+      if (!session) { app.innerHTML = '<div class="card wait"><div class="pulse"></div><h1>Presque prêt !</h1><p>La partie va bientôt s\'ouvrir. Gardez cette page ouverte.</p></div>'; return; }
+
+      if (!isJoined()) {
+        if (document.getElementById("join")) return; // ne pas effacer ce que la personne tape
+        app.innerHTML = `<div class="card"><h1 class="center">Choisissez votre pseudo</h1>
+          <form id="join"><input type="text" id="name" maxlength="16" autocomplete="nickname" placeholder="Votre pseudo" value="${esc(name)}" aria-label="Pseudo" required>
+          <button class="go" type="submit">Rejoindre la partie ▶</button></form>
+          <p class="msg center" style="margin-top:14px">Il apparaîtra sur le grand écran. Restez poli·e 😉</p></div>`;
+        const inp = document.getElementById("name"); if (!name) inp.focus();
+        document.getElementById("join").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const n = inp.value.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 16);
+          if (!n) return;
+          const btn = e.target.querySelector("button"); btn.disabled = true; btn.textContent = "Connexion…";
+          try { await send({ type: "join", s: session, id: me, name: n }); name = n; store.set("quiz-name", n); joined = true; store.set("quiz-joined", session); render(); }
+          catch (err) { btn.disabled = false; btn.textContent = "Réessayer"; }
+        });
         return;
       }
-      const q = question, mine = myVote[q.s + ":" + q.qi], rev = revealed && revealed.s === q.s && revealed.qi === q.qi ? revealed : null;
+
+      if (end) {
+        const r = (end.ranks || {})[me];
+        if (!r) { app.innerHTML = '<div class="card wait"><h1>Partie terminée !</h1><p>Merci d\'avoir joué.</p></div>'; return; }
+        const medal = ["🏆", "🥈", "🥉"][r[0] - 1] || "🎉";
+        app.innerHTML = `<div class="card wait ${r[0] === 1 ? "winner" : ""}"><div class="medal">${medal}</div>
+          <h1>${r[0] === 1 ? "Vous avez gagné !" : "Vous terminez " + r[0] + (r[0] === 1 ? "er" : "e") + " !"}</h1>
+          <p class="big gain">${r[1].toLocaleString("fr-CA")} pts</p>
+          <p>sur ${end.total} joueur${end.total > 1 ? "s" : ""}. Bravo, ${esc(name)} !</p></div>`;
+        return;
+      }
+
+      if (!q) { app.innerHTML = `<div class="card wait"><div class="pulse"></div><h1>Bienvenue, ${esc(name)} !</h1><p>Regardez l'écran : la partie va commencer.</p></div>`; return; }
+
+      const key = q.s + ":" + q.qi, mine = answers[key], rev = reveal && reveal.s === q.s && reveal.qi === q.qi ? reveal : null;
+      const left = remaining(), closed = !rev && left <= 0;
+      let msg;
+      if (rev) {
+        const r = (rev.ranks || {})[me];
+        const ok = mine && mine.k === rev.r;
+        msg = `<div class="center"><p class="big ${ok ? "gain" : ""}">${ok ? "+" + (r ? r[2] : 0) : mine ? "Raté !" : "Pas de réponse"}</p>
+          ${r ? `<span class="rank">${r[0]}<sup>${r[0] === 1 ? "er" : "e"}</sup> sur ${rev.total} · ${r[1].toLocaleString("fr-CA")} pts</span>` : ""}</div>
+          <p style="margin:14px 0 0">${esc(rev.why || "")}</p>`;
+      } else if (mine) msg = `<b>Réponse verrouillée ✓</b> en ${(mine.ms / 1000).toFixed(1).replace(".", ",")} s. Regardez l'écran !`;
+      else if (closed) msg = "<b>Temps écoulé !</b> Attendez la réponse à l'écran.";
+      else msg = "Plus vous répondez vite, plus vous gagnez de points !";
       app.innerHTML = `<div class="card">
-        <span class="num">Question ${q.qi + 1} / ${q.n}</span>
+        <div class="num"><span>Question ${q.qi + 1} / ${q.n}</span><span id="secs">${rev ? "" : Math.ceil(left) + " s"}</span></div>
+        ${rev ? "" : `<div class="timer ${left < 6 ? "low" : ""}" id="timer"><span style="width:${left / (q.limit || 20) * 100}%"></span></div>`}
         <h1>${esc(q.q)}</h1>
         <div class="opts">${q.opts.map((o, i) => {
-          let cls = mine === o.k ? "sel" : "";
-          if (rev) cls = o.k === rev.r ? "good" : (mine === o.k ? "bad" : "");
-          return `<button type="button" class="opt ${cls}" data-k="${esc(o.k)}" ${rev ? "disabled" : ""}><span class="l">${LETTERS[i]}</span>${esc(o.label)}</button>`;
+          let cls = mine && mine.k === o.k ? "sel" : (mine || closed ? "off" : "");
+          if (rev) cls = o.k === rev.r ? "good" : (mine && mine.k === o.k ? "bad" : "off");
+          return `<button type="button" class="opt ${cls}" data-k="${esc(o.k)}" ${rev || mine || closed ? "disabled" : ""}><span class="l">${LET[i]}</span>${esc(o.label)}</button>`;
         }).join("")}</div>
-        <div class="msg" id="msg">${rev
-          ? (mine === rev.r ? "<b>Bravo, bonne réponse !</b> " : mine ? "<b>Pas tout à fait.</b> " : "<b>Réponse :</b> ") + esc(rev.why || "")
-          : mine ? "<b>Vote envoyé ✓</b> Vous pouvez encore changer d'avis. Regardez l'écran !" : "Touchez votre réponse."}</div>
-      </div>`;
-    };
-
-    const handle = (m) => {
-      if (!m || typeof m !== "object") return;
-      if (m.type === "q" && typeof m.qi === "number" && Array.isArray(m.opts)) {
-        if (m.s !== session) { session = m.s; results = {}; }
-        question = m; render();
-      } else if (m.type === "reveal" && m.s === session) {
-        revealed = m;
-        const mine = myVote[m.s + ":" + m.qi];
-        results[m.qi] = mine === m.r;
-        render();
-      } else if (m.type === "end" && m.s === session) {
-        const goods = Object.values(results).filter(Boolean).length, total = m.n || Object.keys(results).length;
-        question = null;
-        app.innerHTML = `<div class="card wait"><h1>Merci d'avoir joué !</h1><p>Votre score : <b style="color:var(--accent);font-size:1.6rem">${goods} / ${total}</b></p><p>C'est exactement ce qu'on apprend à distinguer dans l'AEC en intelligence artificielle.</p></div>`;
-        scoreEl.innerHTML = "";
+        <div class="msg" id="msg">${msg}</div></div>`;
+      if (!rev && !mine && !closed) {
+        tick = setInterval(() => {
+          const l = remaining(), t = document.getElementById("timer"), s = document.getElementById("secs");
+          if (t) { t.firstElementChild.style.width = (l / (q.limit || 20) * 100) + "%"; t.classList.toggle("low", l < 6); }
+          if (s) s.textContent = Math.ceil(l) + " s";
+          if (l <= 0) render();
+        }, 250);
       }
     };
-    const parse = (raw) => { try { const ev = typeof raw === "string" ? JSON.parse(raw) : raw; if (ev.event === "message") return JSON.parse(ev.message); } catch (e) {} return null; };
+
+    const handle = (m, time) => {
+      if (!m || typeof m !== "object" || typeof m.s !== "string") return;
+      if (m.type === "lobby" || (m.type === "q" && m.s !== session)) {
+        if (m.s !== session) { session = m.s; q = null; reveal = null; end = null; joined = false; }
+      }
+      if (m.s !== session) return;
+      if (m.type === "q" && typeof m.qi === "number" && Array.isArray(m.opts)) { q = m; qTime = time; reveal = null; }
+      else if (m.type === "reveal") reveal = m;
+      else if (m.type === "end") end = m;
+    };
+    const parse = (raw) => { try { const ev = typeof raw === "string" ? JSON.parse(raw) : raw; if (ev.event === "message") return [JSON.parse(ev.message), ev.time * 1000]; } catch (e) {} return null; };
 
     app.addEventListener("click", async (e) => {
-      const b = e.target.closest(".opt"); if (!b || b.disabled || !question || sending) return;
-      const q = question, key = q.s + ":" + q.qi;
-      const prev = myVote[key];
-      myVote[key] = b.dataset.k; render();
+      const b = e.target.closest(".opt"); if (!b || b.disabled || !q || sending || remaining() <= 0) return;
+      const key = q.s + ":" + q.qi; if (answers[key]) return;
+      const ms = Date.now() - qTime;
+      answers[key] = { k: b.dataset.k, ms }; render();
       sending = true;
-      try {
-        const r = await fetch(BASE, { method: "POST", body: JSON.stringify({ type: "v", s: q.s, qi: q.qi, k: b.dataset.k, id: me }) });
-        if (!r.ok) throw new Error(r.status);
-      } catch (err) {
-        myVote[key] = prev; render();
-        const msg = document.getElementById("msg");
-        if (msg) msg.innerHTML = "<b>Vote non envoyé.</b> Le réseau est saturé : réessayez dans quelques secondes.";
-      } finally { sending = false; }
+      try { await send({ type: "v", s: q.s, qi: q.qi, k: b.dataset.k, id: me }); }
+      catch (err) { delete answers[key]; render(); const el = document.getElementById("msg"); if (el) el.innerHTML = "<b>Réponse non envoyée.</b> Réseau saturé : touchez à nouveau votre réponse."; }
+      finally { sending = false; }
     });
 
-    // 1) Rattraper l'état actuel (messages des 2 dernières heures), 2) écouter en direct
     render();
-    fetch(BASE + "/json?poll=1&since=2h").then((r) => r.text()).then((txt) => {
-      txt.split("\n").filter(Boolean).map(parse).filter(Boolean).forEach(handle);
+    fetch(BASE + "/json?poll=1&since=3h").then((r) => r.text()).then((txt) => {
+      txt.split("\n").filter(Boolean).map(parse).filter(Boolean).forEach(([m, t]) => handle(m, t));
+      render();
     }).catch(() => {}).finally(() => {
       const es = new EventSource(BASE + "/sse");
       es.onopen = () => setStatus(true, "En direct");
       es.onerror = () => setStatus(false, "Reconnexion…");
-      es.onmessage = (ev) => handle(parse(ev.data));
+      es.onmessage = (ev) => { const p = parse(ev.data); if (!p) return; const [m] = p; if (m.type === "v" || m.type === "join") return; handle(m, Date.now()); render(); };
     });
   })();
   </script>
