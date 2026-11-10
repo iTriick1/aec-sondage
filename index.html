@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070a14">
+  <title>Quiz IA — vote en direct</title>
+  <meta name="description" content="Page de vote du quiz en direct de la présentation étudiante de l'AEC en IA.">
+  <style>
+    :root { --bg:#070a14; --card:#141b31; --line:#26304d; --text:#e9edf6; --muted:#9aa6c3; --accent:#6ef0c4; --blue:#8ea8ff; --orange:#ffb86b; --red:#ff6b81; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font: 17px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; }
+    body { padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); background: radial-gradient(circle at 80% -10%, rgba(110,240,196,.18), transparent 50%), radial-gradient(circle at 0% 110%, rgba(142,168,255,.18), transparent 50%), var(--bg); min-height: 100vh; }
+    main { max-width: 520px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .brand { font-weight: 700; letter-spacing: .02em; }
+    .brand b { color: var(--accent); }
+    .status { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
+    .status.ok i { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .card { background: rgba(20,27,49,.8); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+    .num { color: var(--accent); font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; }
+    h1 { font-size: 1.35rem; line-height: 1.3; margin: 8px 0 18px; }
+    .opts { display: grid; gap: 12px; }
+    .opt { width: 100%; text-align: left; font: 600 1.05rem inherit; font-family: inherit; color: var(--text); background: #0d1326; border: 2px solid var(--line); border-radius: 14px; padding: 18px 16px; display: flex; gap: 14px; align-items: center; cursor: pointer; transition: border-color .2s, background .2s, transform .1s; }
+    .opt:active { transform: scale(.98); }
+    .opt .l { width: 32px; height: 32px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--line); font-weight: 700; }
+    .opt.sel { border-color: var(--accent); background: rgba(110,240,196,.12); }
+    .opt.sel .l { background: var(--accent); color: var(--bg); }
+    .opt.good { border-color: var(--accent); background: rgba(110,240,196,.2); }
+    .opt.bad { border-color: var(--red); background: rgba(255,107,129,.15); }
+    .opt:disabled { cursor: default; }
+    .msg { margin-top: 16px; padding: 14px; border-radius: 12px; background: #0d1326; color: var(--muted); font-size: .95rem; }
+    .msg b { color: var(--text); }
+    .wait { text-align: center; padding: 40px 10px; }
+    .pulse { width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 50%; background: var(--accent); opacity: .8; animation: p 1.6s ease-in-out infinite; }
+    @keyframes p { 0%,100% { transform: scale(.7); opacity: .4; } 50% { transform: scale(1); opacity: .9; box-shadow: 0 0 40px var(--accent); } }
+    .score { text-align: center; margin-top: 14px; color: var(--muted); font-size: .9rem; }
+    .score b { color: var(--accent); }
+    footer { margin-top: 22px; text-align: center; color: var(--muted); font-size: .75rem; }
+    @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <span class="brand">Quiz <b>IA</b></span>
+      <span class="status" id="status"><i></i><span>Connexion…</span></span>
+    </header>
+    <div id="app" aria-live="polite"></div>
+    <div class="score" id="score"></div>
+    <footer>Projet étudiant · vote anonyme · aucune donnée personnelle collectée</footer>
+  </main>
+
+  <script>
+  (function () {
+    const app = document.getElementById("app");
+    const statusEl = document.getElementById("status");
+    const scoreEl = document.getElementById("score");
+    const topic = new URLSearchParams(location.search).get("t") || "";
+    const BASE = "https://ntfy.sh/" + encodeURIComponent(topic);
+    const LETTERS = ["A", "B", "C", "D", "E", "F"];
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+    if (!/^[\w-]{8,64}$/.test(topic)) {
+      app.innerHTML = '<div class="card wait"><h1>Lien incomplet</h1><p>Scannez à nouveau le code QR affiché à l\'écran.</p></div>';
+      statusEl.querySelector("span").textContent = "Hors ligne";
+      return;
+    }
+
+    // Identifiant anonyme de cet appareil (pour qu'un téléphone = un vote)
+    let me = "";
+    try { me = localStorage.getItem("quiz-id") || ""; } catch (e) {}
+    if (!me) { me = Math.random().toString(36).slice(2, 12); try { localStorage.setItem("quiz-id", me); } catch (e) {} }
+
+    let session = null, question = null, revealed = null, myVote = {}, sending = false, results = {};
+
+    const setStatus = (ok, text) => { statusEl.classList.toggle("ok", ok); statusEl.querySelector("span").textContent = text; };
+
+    const render = () => {
+      const goods = Object.values(results).filter(Boolean).length, total = Object.keys(results).length;
+      scoreEl.innerHTML = total ? `Votre score : <b>${goods} / ${total}</b>` : "";
+      if (!question) {
+        app.innerHTML = '<div class="card wait"><div class="pulse"></div><h1>Vous êtes connecté·e !</h1><p>Regardez l\'écran : la prochaine question va apparaître ici.</p></div>';
+        return;
+      }
+      const q = question, mine = myVote[q.s + ":" + q.qi], rev = revealed && revealed.s === q.s && revealed.qi === q.qi ? revealed : null;
+      app.innerHTML = `<div class="card">
+        <span class="num">Question ${q.qi + 1} / ${q.n}</span>
+        <h1>${esc(q.q)}</h1>
+        <div class="opts">${q.opts.map((o, i) => {
+          let cls = mine === o.k ? "sel" : "";
+          if (rev) cls = o.k === rev.r ? "good" : (mine === o.k ? "bad" : "");
+          return `<button type="button" class="opt ${cls}" data-k="${esc(o.k)}" ${rev ? "disabled" : ""}><span class="l">${LETTERS[i]}</span>${esc(o.label)}</button>`;
+        }).join("")}</div>
+        <div class="msg" id="msg">${rev
+          ? (mine === rev.r ? "<b>Bravo, bonne réponse !</b> " : mine ? "<b>Pas tout à fait.</b> " : "<b>Réponse :</b> ") + esc(rev.why || "")
+          : mine ? "<b>Vote envoyé ✓</b> Vous pouvez encore changer d'avis. Regardez l'écran !" : "Touchez votre réponse."}</div>
+      </div>`;
+    };
+
+    const handle = (m) => {
+      if (!m || typeof m !== "object") return;
+      if (m.type === "q" && typeof m.qi === "number" && Array.isArray(m.opts)) {
+        if (m.s !== session) { session = m.s; results = {}; }
+        question = m; render();
+      } else if (m.type === "reveal" && m.s === session) {
+        revealed = m;
+        const mine = myVote[m.s + ":" + m.qi];
+        results[m.qi] = mine === m.r;
+        render();
+      } else if (m.type === "end" && m.s === session) {
+        const goods = Object.values(results).filter(Boolean).length, total = m.n || Object.keys(results).length;
+        question = null;
+        app.innerHTML = `<div class="card wait"><h1>Merci d'avoir joué !</h1><p>Votre score : <b style="color:var(--accent);font-size:1.6rem">${goods} / ${total}</b></p><p>C'est exactement ce qu'on apprend à distinguer dans l'AEC en intelligence artificielle.</p></div>`;
+        scoreEl.innerHTML = "";
+      }
+    };
+    const parse = (raw) => { try { const ev = typeof raw === "string" ? JSON.parse(raw) : raw; if (ev.event === "message") return JSON.parse(ev.message); } catch (e) {} return null; };
+
+    app.addEventListener("click", async (e) => {
+      const b = e.target.closest(".opt"); if (!b || b.disabled || !question || sending) return;
+      const q = question, key = q.s + ":" + q.qi;
+      const prev = myVote[key];
+      myVote[key] = b.dataset.k; render();
+      sending = true;
+      try {
+        const r = await fetch(BASE, { method: "POST", body: JSON.stringify({ type: "v", s: q.s, qi: q.qi, k: b.dataset.k, id: me }) });
+        if (!r.ok) throw new Error(r.status);
+      } catch (err) {
+        myVote[key] = prev; render();
+        const msg = document.getElementById("msg");
+        if (msg) msg.innerHTML = "<b>Vote non envoyé.</b> Le réseau est saturé : réessayez dans quelques secondes.";
+      } finally { sending = false; }
+    });
+
+    // 1) Rattraper l'état actuel (messages des 2 dernières heures), 2) écouter en direct
+    render();
+    fetch(BASE + "/json?poll=1&since=2h").then((r) => r.text()).then((txt) => {
+      txt.split("\n").filter(Boolean).map(parse).filter(Boolean).forEach(handle);
+    }).catch(() => {}).finally(() => {
+      const es = new EventSource(BASE + "/sse");
+      es.onopen = () => setStatus(true, "En direct");
+      es.onerror = () => setStatus(false, "Reconnexion…");
+      es.onmessage = (ev) => handle(parse(ev.data));
+    });
+  })();
+  </script>
+</body>
+</html>
