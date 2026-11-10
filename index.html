@@ -50,6 +50,7 @@
     input[type=text]:focus { outline: none; border-color: var(--accent); }
     .go { padding: 18px; border: 0; border-radius: 14px; font-weight: 800; font-size: 1.25rem; color: #071019; background: linear-gradient(110deg, #6ef0c4, #8ea8ff); cursor: pointer; }
     .go:disabled { opacity: .5; }
+    .piege { display: inline-block; margin-top: 12px; padding: 6px 14px; border-radius: 99px; background: rgba(255,209,102,.15); border: 1px solid rgba(255,209,102,.6); color: var(--gold); font-weight: 800; font-size: 1rem; }
     .big { font-size: 3rem; font-weight: 800; line-height: 1.1; margin: 6px 0; }
     .gain { color: var(--accent); }
     .rank { display: inline-block; margin-top: 8px; padding: 8px 16px; border-radius: 99px; background: rgba(255,255,255,.06); font-weight: 700; }
@@ -149,6 +150,7 @@
       app.innerHTML = `<div class="card">
         <div class="num"><span>Question ${q.qi + 1} / ${q.n}</span><span id="secs">${rev ? "" : Math.ceil(left) + " s"}</span></div>
         ${rev ? "" : `<div class="timer ${left < 6 ? "low" : ""}" id="timer"><span style="width:${left / (q.limit || 20) * 100}%"></span></div>`}
+        ${q.piege ? '<span class="piege">🃏 Question piège !</span>' : ""}
         <h1>${esc(q.q)}</h1>
         <div class="opts">${q.opts.map((o, i) => {
           let cls = mine && mine.k === o.k ? "sel" : (mine || closed ? "off" : "");
